@@ -115,11 +115,14 @@ CyberResilienceTool/
 ├── ai_test_runner.html     — AI validation test runner
 
 ├── css/
+
 │   └── style.css           — Full styling
 
 └── js/
-│   └── questions.js        — Complete question bank, scoring engine, applicability logic
-    └── app.js              — Assessment flow, results, AI recommendations
+
+├── questions.js        — Complete question bank, scoring engine, applicability logic
+
+└── app.js              — Assessment flow, results, AI recommendations
 
 ---
 

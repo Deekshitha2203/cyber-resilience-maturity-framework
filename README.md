@@ -109,13 +109,17 @@ to simulate realistic assessor responses across 7 real-world organisational prof
 ## Project Structure
 
 CyberResilienceTool/
+
 ├── index.html              — Landing page
+
 ├── ai_test_runner.html     — AI validation test runner
+
 ├── css/
 │   └── style.css           — Full styling
+
 └── js/
-├── questions.js        — Complete question bank, scoring engine, applicability logic
-└── app.js              — Assessment flow, results, AI recommendations
+│   └── questions.js        — Complete question bank, scoring engine, applicability logic
+    └── app.js              — Assessment flow, results, AI recommendations
 
 ---
 

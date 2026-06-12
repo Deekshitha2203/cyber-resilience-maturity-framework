@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyber Resilience Maturity Framework</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- LANDING PAGE -->
+  <div id="landing" class="page active">
+
+    <nav class="navbar">
+      <div class="nav-brand">
+        <span class="nav-logo">⬡</span>
+        <span class="nav-title">CRMF</span>
+      </div>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#methodology">Methodology</a>
+        <a href="#pillars">Pillars</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-content">
+        <div class="hero-badge">Duke MEng Cybersecurity · CrowdStrike Collaboration</div>
+        <h1 class="hero-title">
+          Cyber Resilience<br/>
+          <span class="gradient-text">Maturity Framework</span>
+        </h1>
+        <p class="hero-subtitle">
+          A comprehensive GRC assessment tool that measures your organisation's
+          cyber resilience across five critical pillars — tailored to your
+          sector, size, and technology environment.
+        </p>
+        <div class="hero-actions">
+          <button class="btn-primary" onclick="startAssessment()">
+            Start Assessment
+            <span class="btn-arrow">→</span>
+          </button>
+          <button class="btn-secondary" onclick="scrollToSection('about')">
+            Learn More
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-number">5</span>
+            <span class="stat-label">Pillars</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-number">200+</span>
+            <span class="stat-label">Controls</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-number">5</span>
+            <span class="stat-label">Sector Profiles</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-number">AI</span>
+            <span class="stat-label">Powered Insights</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="radar-preview">
+          <svg viewBox="0 0 300 300" class="radar-svg">
+            <defs>
+              <radialGradient id="radarGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- Grid circles -->
+            <circle cx="150" cy="150" r="120" fill="none" stroke="rgba(99,102,241,0.15)" stroke-width="1"/>
+            <circle cx="150" cy="150" r="90"  fill="none" stroke="rgba(99,102,241,0.15)" stroke-width="1"/>
+            <circle cx="150" cy="150" r="60"  fill="none" stroke="rgba(99,102,241,0.15)" stroke-width="1"/>
+            <circle cx="150" cy="150" r="30"  fill="none" stroke="rgba(99,102,241,0.15)" stroke-width="1"/>
+            <!-- Axis lines -->
+            <line x1="150" y1="30"  x2="150" y2="270" stroke="rgba(99,102,241,0.2)" stroke-width="1"/>
+            <line x1="30"  y1="150" x2="270" y2="150" stroke="rgba(99,102,241,0.2)" stroke-width="1"/>
+            <line x1="64"  y1="64"  x2="236" y2="236" stroke="rgba(99,102,241,0.2)" stroke-width="1"/>
+            <line x1="236" y1="64"  x2="64"  y2="236" stroke="rgba(99,102,241,0.2)" stroke-width="1"/>
+            <!-- Sample data polygon -->
+            <polygon
+              points="150,60 228,108 210,198 90,198 72,108"
+              fill="rgba(99,102,241,0.2)"
+              stroke="#6366f1"
+              stroke-width="2"
+            />
+            <!-- Data points -->
+            <circle cx="150" cy="60"  r="5" fill="#6366f1"/>
+            <circle cx="228" cy="108" r="5" fill="#6366f1"/>
+            <circle cx="210" cy="198" r="5" fill="#6366f1"/>
+            <circle cx="90"  cy="198" r="5" fill="#6366f1"/>
+            <circle cx="72"  cy="108" r="5" fill="#6366f1"/>
+            <!-- Labels -->
+            <text x="150" y="22"  text-anchor="middle" fill="#a5b4fc" font-size="10" font-family="sans-serif">Governance</text>
+            <text x="268" y="112" text-anchor="start"  fill="#a5b4fc" font-size="10" font-family="sans-serif">Risk</text>
+            <text x="220" y="222" text-anchor="middle" fill="#a5b4fc" font-size="10" font-family="sans-serif">Continuity</text>
+            <text x="80"  y="222" text-anchor="middle" fill="#a5b4fc" font-size="10" font-family="sans-serif">Recovery</text>
+            <text x="18"  y="112" text-anchor="start"  fill="#a5b4fc" font-size="10" font-family="sans-serif">Evolution</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="section-inner">
+        <h2 class="section-title">What is CRMF?</h2>
+        <p class="section-body">
+          The Cyber Resilience Maturity Framework is a comprehensive GRC assessment
+          tool developed as part of a Duke MEng Cybersecurity capstone project in
+          collaboration with CrowdStrike. It evaluates organisational cyber resilience
+          across five pillars using a dynamic profiling system that filters and weights
+          questions based on your specific sector, size, funding level, and technology
+          environment.
+        </p>
+      </div>
+    </section>
+
+    <section id="methodology" class="section section-alt">
+      <div class="section-inner">
+        <h2 class="section-title">Scoring Methodology</h2>
+        <div class="method-grid">
+          <div class="method-card">
+            <div class="method-icon">📋</div>
+            <h3>Implementation</h3>
+            <p>35% weight — how fully the control is deployed</p>
+          </div>
+          <div class="method-card">
+            <div class="method-icon">🧪</div>
+            <h3>Test Type</h3>
+            <p>25% weight — how rigorously it has been tested</p>
+          </div>
+          <div class="method-card">
+            <div class="method-icon">🎯</div>
+            <h3>Coverage Scope</h3>
+            <p>20% weight — how much of the environment it covers</p>
+          </div>
+          <div class="method-card">
+            <div class="method-icon">📅</div>
+            <h3>Last Reviewed</h3>
+            <p>15% weight — how recently it was reviewed</p>
+          </div>
+          <div class="method-card">
+            <div class="method-icon">💪</div>
+            <h3>Stress Tested</h3>
+            <p>5% weight — whether it has been pushed to failure</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pillars" class="section">
+      <div class="section-inner">
+        <h2 class="section-title">Five Pillars</h2>
+        <div class="pillars-grid">
+          <div class="pillar-card">
+            <div class="pillar-num">01</div>
+            <h3>Governance & Command</h3>
+            <p>Leadership authority, crisis management, and strategic oversight</p>
+          </div>
+          <div class="pillar-card">
+            <div class="pillar-num">02</div>
+            <h3>Risk Management</h3>
+            <p>Threat intelligence, risk registers, and third party oversight</p>
+          </div>
+          <div class="pillar-card">
+            <div class="pillar-num">03</div>
+            <h3>Operational Continuity</h3>
+            <p>Business continuity, redundancy, and degraded operations</p>
+          </div>
+          <div class="pillar-card">
+            <div class="pillar-num">04</div>
+            <h3>Trusted Recovery</h3>
+            <p>Clean room restoration, backup integrity, and verified recovery</p>
+          </div>
+          <div class="pillar-card">
+            <div class="pillar-num">05</div>
+            <h3>Evolution & Adaptation</h3>
+            <p>Continuous improvement, threat intelligence, and maturity growth</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Duke MEng Cybersecurity · Built in collaboration with CrowdStrike</p>
+    </footer>
+
+  </div>
+
+  <!-- ASSESSMENT PAGE -->
+  <div id="assessment" class="page">
+
+    <div class="assessment-header">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="assessment-title-block">
+        <span id="assessment-section-label" class="section-label">Basic Questions</span>
+        <h2 id="assessment-title">Organisation Profile</h2>
+      </div>
+      <div class="progress-block">
+        <span id="progress-text" class="progress-text">Step 1 of 7</span>
+        <div class="progress-bar-outer">
+          <div id="progress-bar" class="progress-bar-inner" style="width:14%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-body">
+      <div id="question-container" class="question-container"></div>
+      <div class="assessment-nav">
+        <button id="prev-btn" class="btn-secondary" onclick="prevStep()" style="display:none">← Previous</button>
+        <button id="next-btn" class="btn-primary" onclick="nextStep()">Next →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RESULTS PAGE -->
+  <div id="results" class="page">
+    <div id="results-content"></div>
+  </div>
+
+  <script src="js/questions.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

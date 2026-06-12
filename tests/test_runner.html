@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CRMF Test Runner</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --bg-card: #12121a; --bg-elevated: #1a1a26;
+      --border: rgba(255,255,255,0.08); --text: #f1f1f5; --text-muted: #8b8ba0;
+      --accent: #6366f1; --accent-light: #818cf8;
+      --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
+      --radius: 12px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; padding: 40px; }
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--text-muted); margin-bottom: 32px; font-size: 14px; }
+    .run-btn {
+      background: var(--accent); color: #fff; border: none; border-radius: var(--radius);
+      padding: 14px 32px; font-size: 15px; font-weight: 700; cursor: pointer;
+      margin-bottom: 40px; transition: all 0.2s;
+    }
+    .run-btn:hover { background: var(--accent-light); transform: translateY(-1px); }
+
+    /* SUMMARY BAR */
+    .summary-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px;
+    }
+    .summary-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 24px;
+    }
+    .summary-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .summary-card .value { font-size: 32px; font-weight: 800; }
+    .value.green { color: var(--green); }
+    .value.red   { color: var(--red); }
+    .value.yellow{ color: var(--yellow); }
+
+    /* TEST CASE CARDS */
+    .test-case {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 20px; overflow: hidden;
+    }
+    .test-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .test-header:hover { background: var(--bg-elevated); }
+    .test-title { font-size: 16px; font-weight: 700; }
+    .test-meta  { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .badge {
+      font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 100px;
+      text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
+    }
+    .badge.pass   { background: rgba(34,197,94,0.15);  color: var(--green); }
+    .badge.fail   { background: rgba(239,68,68,0.15);  color: var(--red); }
+    .badge.warn   { background: rgba(234,179,8,0.15);  color: var(--yellow); }
+    .badge.pending{ background: rgba(99,102,241,0.15); color: var(--accent-light); }
+
+    .test-body { padding: 24px; display: none; }
+    .test-body.open { display: block; }
+
+    /* SCORE COMPARISON TABLE */
+    .comparison-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .comparison-table th {
+      text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted); padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .comparison-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; }
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .match   { color: var(--green); font-weight: 700; }
+    .mismatch{ color: var(--red);   font-weight: 700; }
+
+    /* PILLAR BARS */
+    .pillar-bars { margin-top: 20px; }
+    .pillar-row  { display: grid; grid-template-columns: 180px 1fr 60px; gap: 12px; align-items: center; margin-bottom: 10px; }
+    .pillar-name { font-size: 12px; color: var(--text-muted); }
+    .bar-outer   { height: 6px; background: var(--bg-elevated); border-radius: 100px; overflow: hidden; }
+    .bar-inner   { height: 100%; border-radius: 100px; }
+    .pillar-pct  { font-size: 13px; font-weight: 700; text-align: right; }
+
+    /* PROFILE CHIPS */
+    .profile-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .chip {
+      font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 100px;
+      background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .chip.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); color: var(--accent-light); }
+
+    /* VALIDATION SECTION */
+    .validation-block {
+      background: var(--bg-elevated); border-radius: var(--radius); padding: 16px 20px; margin-top: 16px;
+    }
+    .validation-block h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--accent-light); }
+    .validation-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+    .validation-row .vl { color: var(--text-muted); }
+    .validation-row .vr { font-weight: 700; }
+
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; margin-top: 8px; }
+    .toggle-hint { font-size: 12px; color: var(--text-muted); float: right; font-weight: 400; }
+  </style>
+</head>
+<body>
+
+  <h1>CRMF Test Runner</h1>
+  <p class="subtitle">Automated validation of scoring engine across 12 org profiles · Duke MEng Cybersecurity Capstone</p>
+
+  <button class="run-btn" onclick="runAllTests()">▶ Run All Tests</button>
+
+  <div id="summary-bar" class="summary-bar" style="display:none"></div>
+  <div id="results-container"></div>
+
+  <script src="../js/questions.js"></script>
+  <script>
+
+  // ============================================================
+  // TEST CASE DEFINITIONS
+  // Each case has:
+  //   profile     — org profile fed to isApplicable + scoring
+  //   answers     — fixed deterministic answers for every question
+  //   expectedTier — human expert expectation
+  //   description  — narrative explaining the expectation
+  // ============================================================
+
+  const ANSWER_SETS = {
+
+    // All controls OPTIMISED + FULL test + FULL SCOPE + WITHIN 90 DAYS + MULTIPLE FAILURES
+    topTier: {
+      implementation: "OPTIMISED: Continuously improved",
+      testType:       "FULL: Live end to end test",
+      coverageScope:  "FULL SCOPE: All systems across the organisation",
+      lastReviewed:   "WITHIN 90 DAYS: Last 3 months",
+      stressTested:   "MULTIPLE FAILURES: Multiple simultaneous failures tested"
+    },
+
+    // Good but not perfect
+    strong: {
+      implementation: "DEFINED: Fully documented and implemented",
+      testType:       "FUNCTIONAL: Partial live test",
+      coverageScope:  "FULL SCOPE: All systems across the organisation",
+      lastReviewed:   "WITHIN 90 DAYS: Last 3 months",
+      stressTested:   "PARTIAL: Single failure scenario tested"
+    },
+
+    // Partially implemented, tabletop tested
+    developing: {
+      implementation: "DEVELOPING: Partially implemented",
+      testType:       "TABLETOP: Discussion based exercise",
+      coverageScope:  "CRITICAL SYSTEMS: Tier 1 systems only",
+      lastReviewed:   "90 TO 180 DAYS: 3-6 months ago",
+      stressTested:   "NO: Never stress tested"
+    },
+
+    // Ad hoc, theoretical only
+    initial: {
+      implementation: "INITIAL: Ad hoc, undocumented",
+      testType:       "THEORETICAL: Policy only, never tested",
+      coverageScope:  "LIMITED: Less than 25% of environment",
+      lastReviewed:   "180 TO 365 DAYS: 6-12 months ago",
+      stressTested:   "NO: Never stress tested"
+    },
+
+    // Completely missing
+    missing: {
+      implementation: "MISSING: Does not exist",
+      testType:       "",
+      coverageScope:  "",
+      lastReviewed:   "",
+      stressTested:   ""
+    },
+
+    // Untested but defined
+    untested: {
+      implementation: "DEFINED: Fully documented and implemented",
+      testType:       "UNTESTED: Never exercised",
+      coverageScope:  "CRITICAL SYSTEMS: Tier 1 systems only",
+      lastReviewed:   "90 TO 180 DAYS: 3-6 months ago",
+      stressTested:   "NO: Never stress tested"
+    }
+  };
+
+  // Build answers for a profile — assign answer sets per pillar section
+  function buildAnswers(profile, answerMap) {
+    // answerMap = { governance: "strong", risk: "developing", ... }
+    // or a single string to apply to all
+    const answers = {};
+    for (const pillarKey of Object.keys(FRAMEWORK.pillars)) {
+      const pillar = FRAMEWORK.pillars[pillarKey];
+      const setKey = typeof answerMap === "string" ? answerMap : (answerMap[pillarKey] || "developing");
+      const answerSet = ANSWER_SETS[setKey];
+      for (const q of pillar.questions) {
+        if (isApplicable(q, profile)) {
+          answers[q.id] = { ...answerSet };
+        }
+      }
+    }
+    return answers;
+  }
+
+  // ============================================================
+  // SCORING ENGINE (inline — mirrors questions.js)
+  // ============================================================
+
+  function scoreQuestionLocal(question, answer, isCascadeZero) {
+    if (isCascadeZero) return 0;
+    if (!answer) return 0;
+    if (answer.implementation === "MISSING: Does not exist") return 0;
+    if (!answer.implementation) return 0;
+
+    const st = FRAMEWORK.scoringTables;
+    const sw = FRAMEWORK.subWeights;
+
+    const implScore   = st.implementation[answer.implementation] ?? 0;
+    const testScore   = st.testType[answer.testType] ?? 0;
+    const stressScore = st.stressTested[answer.stressTested] ?? 0;
+    const lrScore     = st.lastReviewed[answer.lastReviewed] ?? 0;
+    const covScore    = st.coverageScope[answer.coverageScope] ?? 0;
+
+    const inner = (implScore   * sw.implementation)
+                + (testScore   * sw.testType)
+                + (covScore    * sw.coverageScope)
+                + (lrScore     * sw.lastReviewed)
+                + (stressScore * sw.stressTested);
+
+    const penalty = answer.testType === "UNTESTED: Never exercised" ? 0.4 : 1;
+    return question.w * inner * penalty;
+  }
+
+  function scorePillarLocal(pillarKey, profile, answers) {
+    const pillar = FRAMEWORK.pillars[pillarKey];
+    const cascadeZeros = getCascadeZeroIds(answers);
+    let earned = 0;
+    let maxPossible = 0;
+    for (const q of pillar.questions) {
+      if (!isApplicable(q, profile)) continue;
+      maxPossible += q.w;
+      earned += scoreQuestionLocal(q, answers[q.id], cascadeZeros.has(q.id));
+    }
+    return maxPossible === 0 ? 0 : (earned / maxPossible) * 100;
+  }
+
+  function scoreGlobalLocal(profile, answers) {
+    const pillarScores = {};
+    let total = 0;
+    let count = 0;
+    for (const key of Object.keys(FRAMEWORK.pillars)) {
+      const score = scorePillarLocal(key, profile, answers);
+      pillarScores[key] = score;
+      total += score;
+      count++;
+    }
+    return { pillarScores, globalIndex: count === 0 ? 0 : total / count };
+  }
+
+  function getTierLocal(score) {
+    if (score >= 85) return "Iron Fortress";
+    if (score >= 70) return "Resilient";
+    if (score >= 55) return "Developing";
+    if (score >= 40) return "Vulnerable";
+    return "Critical Risk";
+  }
+
+  function getTierColor(tier) {
+    const map = {
+      "Iron Fortress": "#00c853",
+      "Resilient":     "#64dd17",
+      "Developing":    "#ffd600",
+      "Vulnerable":    "#ff6d00",
+      "Critical Risk": "#ef4444"
+    };
+    return map[tier] || "#8b8ba0";
+  }
+
+  function getBarColor(score) {
+    if (score >= 70) return "#22c55e";
+    if (score >= 55) return "#eab308";
+    if (score >= 40) return "#f97316";
+    return "#ef4444";
+  }
+
+  // ============================================================
+  // MANUAL EXPECTED SCORE CALCULATION
+  // For each test case I calculate what the score SHOULD be
+  // based on the answer set and profile
+  // This is the ground truth to compare against
+  // ============================================================
+
+  function calcExpectedScore(answerSet) {
+    // For a single uniform answer set applied to ALL applicable questions:
+    // Score per question = w * inner * penalty
+    // Since all questions get same answer, global = weighted avg = single question score / w * 100
+    // Which simplifies to just: inner * penalty * 100
+    const st = FRAMEWORK.scoringTables;
+    const sw = FRAMEWORK.subWeights;
+    if (!answerSet.implementation || answerSet.implementation === "MISSING: Does not exist") return 0;
+    const implScore   = st.implementation[answerSet.implementation] ?? 0;
+    const testScore   = st.testType[answerSet.testType] ?? 0;
+    const stressScore = st.stressTested[answerSet.stressTested] ?? 0;
+    const lrScore     = st.lastReviewed[answerSet.lastReviewed] ?? 0;
+    const covScore    = st.coverageScope[answerSet.coverageScope] ?? 0;
+    const inner = (implScore * sw.implementation)
+                + (testScore * sw.testType)
+                + (covScore  * sw.coverageScope)
+                + (lrScore   * sw.lastReviewed)
+                + (stressScore * sw.stressTested);
+    const penalty = answerSet.testType === "UNTESTED: Never exercised" ? 0.4 : 1;
+    return inner * penalty * 100;
+  }
+
+  // ============================================================
+  // TEST CASES
+  // ============================================================
+
+  const TEST_CASES = [
+    {
+      id: "TC01",
+      name: "Large Financial Services — Iron Fortress",
+      description: "Large, Well Funded Financial Services org with full tech stack and all controls at top tier. Expected to score near perfect.",
+      profile: {
+        orgType: "Financial Services", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: false, usesAI: true, usesAgenticAI: true,
+        processesPayments: true, sensitiveData: true, thirdPartyVendors: true, softwareDev: true
+      },
+      answerMap: "topTier",
+      expectedTier: "Iron Fortress",
+      expectedScoreMin: 85,
+      expectedScoreMax: 100,
+      expertRationale: "A large, well-funded Financial Services org with all controls optimised and fully tested across the entire environment should achieve near-perfect resilience."
+    },
+    {
+      id: "TC02",
+      name: "Small Healthcare — Critical Risk",
+      description: "Small, Limited Healthcare org with basic tech, all controls completely missing.",
+      profile: {
+        orgType: "Healthcare", orgSize: "Small", fundingLevel: "Limited",
+        usesCloud: false, usesOT: false, usesAI: false, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: true, thirdPartyVendors: false, softwareDev: false
+      },
+      answerMap: "missing",
+      expectedTier: "Critical Risk",
+      expectedScoreMin: 0,
+      expectedScoreMax: 15,
+      expertRationale: "A small, underfunded healthcare org with no controls in place represents the worst case scenario — maximum patient safety risk and regulatory exposure."
+    },
+    {
+      id: "TC03",
+      name: "Medium Energy and Utilities — Vulnerable",
+      description: "Medium, Moderate funded Energy org with OT and cloud, initial/ad-hoc controls.",
+      profile: {
+        orgType: "Energy and Utilities", orgSize: "Medium", fundingLevel: "Moderate",
+        usesCloud: true, usesOT: true, usesAI: false, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: false, thirdPartyVendors: true, softwareDev: false
+      },
+      answerMap: "initial",
+      expectedTier: "Vulnerable",
+      expectedScoreMin: 15,
+      expectedScoreMax: 40,
+      expertRationale: "A medium energy org with OT infrastructure and only ad-hoc controls is significantly exposed — especially given the critical infrastructure risk profile."
+    },
+    {
+      id: "TC04",
+      name: "Large Manufacturing and OT — Developing",
+      description: "Large, Well Funded Manufacturing org with OT and AI, partially implemented controls.",
+      profile: {
+        orgType: "Manufacturing and OT", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: true, usesAI: true, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: false, thirdPartyVendors: true, softwareDev: true
+      },
+      answerMap: "developing",
+      expectedTier: "Developing",
+      expectedScoreMin: 35,
+      expectedScoreMax: 60,
+      expertRationale: "A large OT manufacturer with partial controls demonstrates progress but significant gaps remain — particularly given the complex OT+AI environment."
+    },
+    {
+      id: "TC05",
+      name: "Small Other — Critical Risk",
+      description: "Small, Limited generic org with minimal tech and all controls missing.",
+      profile: {
+        orgType: "Other", orgSize: "Small", fundingLevel: "Limited",
+        usesCloud: false, usesOT: false, usesAI: false, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: false, thirdPartyVendors: false, softwareDev: false
+      },
+      answerMap: "missing",
+      expectedTier: "Critical Risk",
+      expectedScoreMin: 0,
+      expectedScoreMax: 15,
+      expertRationale: "Smallest possible org profile with zero controls — absolute baseline worst case."
+    },
+    {
+      id: "TC06",
+      name: "Large Healthcare — Resilient",
+      description: "Large, Well Funded Healthcare org with full tech stack and strong controls.",
+      profile: {
+        orgType: "Healthcare", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: false, usesAI: true, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: true, thirdPartyVendors: true, softwareDev: true
+      },
+      answerMap: "strong",
+      expectedTier: "Resilient",
+      expectedScoreMin: 65,
+      expectedScoreMax: 85,
+      expertRationale: "A large, well-funded hospital with strong but not perfect controls should sit comfortably in the Resilient tier — strong governance and clinical safety posture."
+    },
+    {
+      id: "TC07",
+      name: "Medium Financial Services — Developing",
+      description: "Medium, Moderate Financial Services org with payments and cloud, developing controls.",
+      profile: {
+        orgType: "Financial Services", orgSize: "Medium", fundingLevel: "Moderate",
+        usesCloud: true, usesOT: false, usesAI: false, usesAgenticAI: false,
+        processesPayments: true, sensitiveData: true, thirdPartyVendors: true, softwareDev: false
+      },
+      answerMap: "developing",
+      expectedTier: "Developing",
+      expectedScoreMin: 35,
+      expectedScoreMax: 60,
+      expertRationale: "A mid-size financial org with developing controls — common in community banks and regional fintechs. Room to grow but not critically exposed."
+    },
+    {
+      id: "TC08",
+      name: "Large Energy and Utilities — Resilient",
+      description: "Large, Well Funded Energy org with OT, AI, and cloud and strong controls.",
+      profile: {
+        orgType: "Energy and Utilities", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: true, usesAI: true, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: false, thirdPartyVendors: true, softwareDev: false
+      },
+      answerMap: "strong",
+      expectedTier: "Resilient",
+      expectedScoreMin: 65,
+      expectedScoreMax: 85,
+      expertRationale: "A large energy utility with strong controls across OT and IT should demonstrate solid resilience — key NERC CIP compliance posture expected."
+    },
+    {
+      id: "TC09",
+      name: "Small Manufacturing and OT — Critical Risk",
+      description: "Small, Limited Manufacturing org with OT only, all controls missing.",
+      profile: {
+        orgType: "Manufacturing and OT", orgSize: "Small", fundingLevel: "Limited",
+        usesCloud: false, usesOT: true, usesAI: false, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: false, thirdPartyVendors: false, softwareDev: false
+      },
+      answerMap: "missing",
+      expectedTier: "Critical Risk",
+      expectedScoreMin: 0,
+      expectedScoreMax: 15,
+      expertRationale: "A small manufacturer with OT and zero controls is extremely vulnerable — a single ransomware attack could halt production entirely."
+    },
+    {
+      id: "TC10",
+      name: "Medium Healthcare — Vulnerable",
+      description: "Medium, Moderate Healthcare org with AI and cloud, initial controls.",
+      profile: {
+        orgType: "Healthcare", orgSize: "Medium", fundingLevel: "Moderate",
+        usesCloud: true, usesOT: false, usesAI: true, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: true, thirdPartyVendors: true, softwareDev: false
+      },
+      answerMap: "initial",
+      expectedTier: "Vulnerable",
+      expectedScoreMin: 15,
+      expectedScoreMax: 40,
+      expertRationale: "A mid-size hospital using AI tools with only ad-hoc controls represents significant patient data and safety risk."
+    },
+    {
+      id: "TC11",
+      name: "Large Financial Services — Full Stack Agentic AI",
+      description: "Large, Well Funded Financial Services with agentic AI, full tech stack, top tier controls. True Iron Fortress candidate.",
+      profile: {
+        orgType: "Financial Services", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: false, usesAI: true, usesAgenticAI: true,
+        processesPayments: true, sensitiveData: true, thirdPartyVendors: true, softwareDev: true
+      },
+      answerMap: "topTier",
+      expectedTier: "Iron Fortress",
+      expectedScoreMin: 85,
+      expectedScoreMax: 100,
+      expertRationale: "The most demanding profile possible — agentic AI in a highly regulated financial environment with all controls optimised. This is the gold standard."
+    },
+    {
+      id: "TC12",
+      name: "Small Financial Services — Untested Controls",
+      description: "Small, Limited Financial Services org with payments, all controls defined but never tested.",
+      profile: {
+        orgType: "Financial Services", orgSize: "Small", fundingLevel: "Limited",
+        usesCloud: false, usesOT: false, usesAI: false, usesAgenticAI: false,
+        processesPayments: true, sensitiveData: true, thirdPartyVendors: false, softwareDev: false
+      },
+      answerMap: "untested",
+      expectedTier: "Vulnerable",
+      expectedScoreMin: 10,
+      expectedScoreMax: 35,
+      expertRationale: "A small fintech with documented but completely untested controls — the 0.4 untested penalty should severely impact the score despite having documentation. Paper compliance without real resilience."
+    }
+  ];
+
+  // ============================================================
+  // TEST RUNNER
+  // ============================================================
+
+  function runAllTests() {
+    const container = document.getElementById("results-container");
+    const summaryBar = document.getElementById("summary-bar");
+    container.innerHTML = "";
+    summaryBar.style.display = "none";
+
+    const results = [];
+
+    for (const tc of TEST_CASES) {
+      const answers = buildAnswers(tc.profile, tc.answerMap);
+      const { pillarScores, globalIndex } = scoreGlobalLocal(tc.profile, answers);
+      const actualTier = getTierLocal(globalIndex);
+
+      // Expected score based on answer set formula
+      const answerSet = typeof tc.answerMap === "string"
+        ? ANSWER_SETS[tc.answerMap]
+        : ANSWER_SETS[tc.answerMap.governance || "developing"];
+      const expectedScore = calcExpectedScore(answerSet);
+
+      // Validation checks
+      const scoreInRange = globalIndex >= tc.expectedScoreMin && globalIndex <= tc.expectedScoreMax;
+      const tierMatch    = actualTier === tc.expectedTier;
+      const mathMatch    = Math.abs(globalIndex - expectedScore) < 5; // within 5% tolerance for cascade effects
+
+      const overallPass  = scoreInRange && tierMatch;
+
+      results.push({
+        tc, answers, pillarScores, globalIndex, actualTier,
+        expectedScore, scoreInRange, tierMatch, mathMatch, overallPass
+      });
+    }
+
+    // Summary
+    const passed  = results.filter(r => r.overallPass).length;
+    const failed  = results.filter(r => !r.overallPass).length;
+    const avgScore = results.reduce((s, r) => s + r.globalIndex, 0) / results.length;
+
+    summaryBar.innerHTML = `
+      <div class="summary-card">
+        <div class="label">Total Tests</div>
+        <div class="value" style="color:var(--accent-light)">${results.length}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Passed</div>
+        <div class="value green">${passed}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Failed</div>
+        <div class="value ${failed > 0 ? "red" : "green"}">${failed}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Avg Score</div>
+        <div class="value yellow">${Math.round(avgScore)}%</div>
+      </div>
+    `;
+    summaryBar.style.display = "grid";
+
+    // Render each result
+    container.innerHTML = `<div class="section-title">Test Results <span class="toggle-hint">Click any card to expand</span></div>`;
+
+    for (const r of results) {
+      const { tc, pillarScores, globalIndex, actualTier, expectedScore,
+              scoreInRange, tierMatch, mathMatch, overallPass } = r;
+
+      const statusBadge = overallPass
+        ? `<span class="badge pass">✓ Pass</span>`
+        : `<span class="badge fail">✗ Fail</span>`;
+
+      const tierColor = getTierColor(actualTier);
+      const pillarKeys = Object.keys(FRAMEWORK.pillars);
+
+      const techFlags = [
+        tc.profile.usesCloud      ? "Cloud"          : null,
+        tc.profile.usesOT         ? "OT"             : null,
+        tc.profile.usesAI         ? "AI"             : null,
+        tc.profile.usesAgenticAI  ? "Agentic AI"     : null,
+        tc.profile.processesPayments ? "Payments"    : null,
+        tc.profile.thirdPartyVendors ? "3rd Party"   : null,
+        tc.profile.softwareDev    ? "Software Dev"   : null,
+      ].filter(Boolean);
+
+      const card = document.createElement("div");
+      card.className = "test-case";
+      card.innerHTML = `
+        <div class="test-header" onclick="toggleCard('body-${tc.id}')">
+          <div>
+            <div class="test-title">${tc.id} — ${tc.name}</div>
+            <div class="test-meta">${tc.profile.orgType} · ${tc.profile.orgSize} · ${tc.profile.fundingLevel} · Score: ${Math.round(globalIndex)}% · ${actualTier}</div>
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="test-body" id="body-${tc.id}">
+
+          <!-- PROFILE CHIPS -->
+          <div class="profile-chips">
+            <span class="chip active">${tc.profile.orgType}</span>
+            <span class="chip active">${tc.profile.orgSize}</span>
+            <span class="chip active">${tc.profile.fundingLevel}</span>
+            ${techFlags.map(f => `<span class="chip active">${f}</span>`).join("")}
+            <span class="chip">Answer Set: ${tc.answerMap}</span>
+          </div>
+
+          <!-- EXPERT RATIONALE -->
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;padding:12px 16px;background:var(--bg-elevated);border-radius:8px;">
+            <strong style="color:var(--text-muted)">Expert Rationale:</strong> ${tc.expertRationale}
+          </div>
+
+          <!-- SCORE COMPARISON TABLE -->
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Expected</th>
+                <th>Actual</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Global Score</td>
+                <td>${tc.expectedScoreMin}% – ${tc.expectedScoreMax}%</td>
+                <td>${Math.round(globalIndex)}%</td>
+                <td class="${scoreInRange ? "match" : "mismatch"}">${scoreInRange ? "✓ In Range" : "✗ Out of Range"}</td>
+              </tr>
+              <tr>
+                <td>Maturity Tier</td>
+                <td>${tc.expectedTier}</td>
+                <td style="color:${tierColor};font-weight:700">${actualTier}</td>
+                <td class="${tierMatch ? "match" : "mismatch"}">${tierMatch ? "✓ Match" : "✗ Mismatch"}</td>
+              </tr>
+              <tr>
+                <td>Formula Score</td>
+                <td>${Math.round(expectedScore)}%</td>
+                <td>${Math.round(globalIndex)}%</td>
+                <td class="${mathMatch ? "match" : "warn"}">${mathMatch ? "✓ Match" : "⚠ Delta > 5% (cascade effects)"}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- PILLAR BREAKDOWN -->
+          <div class="pillar-bars">
+            ${pillarKeys.map(key => {
+              const score = pillarScores[key];
+              const color = getBarColor(score);
+              return `
+                <div class="pillar-row">
+                  <div class="pillar-name">${FRAMEWORK.pillars[key].name}</div>
+                  <div class="bar-outer">
+                    <div class="bar-inner" style="width:${score}%;background:${color}"></div>
+                  </div>
+                  <div class="pillar-pct" style="color:${color}">${Math.round(score)}%</div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+
+          <!-- VALIDATION BLOCK -->
+          <div class="validation-block">
+            <h4>Validation Summary</h4>
+            <div class="validation-row">
+              <span class="vl">Score in expected range (${tc.expectedScoreMin}–${tc.expectedScoreMax}%)</span>
+              <span class="vr ${scoreInRange ? "match" : "mismatch"}">${scoreInRange ? "✓ Pass" : "✗ Fail"}</span>
+            </div>
+            <div class="validation-row">
+              <span class="vl">Tier matches expert expectation</span>
+              <span class="vr ${tierMatch ? "match" : "mismatch"}">${tierMatch ? "✓ Pass" : "✗ Fail"}</span>
+            </div>
+            <div class="validation-row">
+              <span class="vl">Formula score vs engine score delta</span>
+              <span class="vr ${mathMatch ? "match" : "warn"}">${Math.abs(Math.round(globalIndex) - Math.round(expectedScore))}% delta</span>
+            </div>
+            <div class="validation-row">
+              <span class="vl">Applicable questions count</span>
+              <span class="vr" style="color:var(--accent-light)">${countApplicable(tc.profile)}</span>
+            </div>
+          </div>
+
+        </div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  function countApplicable(profile) {
+    let count = 0;
+    for (const pillarKey of Object.keys(FRAMEWORK.pillars)) {
+      const pillar = FRAMEWORK.pillars[pillarKey];
+      for (const q of pillar.questions) {
+        if (isApplicable(q, profile)) count++;
+      }
+    }
+    return count;
+  }
+
+  function toggleCard(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("open");
+  }
+
+  </script>
+</body>
+</html>

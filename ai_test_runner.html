@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CRMF AI Test Runner</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --bg-card: #12121a; --bg-elevated: #1a1a26;
+      --border: rgba(255,255,255,0.08); --text: #f1f1f5; --text-muted: #8b8ba0;
+      --accent: #6366f1; --accent-light: #818cf8;
+      --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
+      --radius: 12px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; padding: 40px; line-height: 1.6; }
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--text-muted); margin-bottom: 32px; }
+    .controls { display: flex; gap: 16px; margin-bottom: 40px; align-items: center; flex-wrap: wrap; }
+    .run-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 14px 32px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .run-btn:hover { background: var(--accent-light); transform: translateY(-1px); }
+    .run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .run-single-btn { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .run-single-btn:hover { border-color: var(--accent); color: var(--text); }
+    .holistic-btn { background: linear-gradient(135deg, #6366f1, #a78bfa); color: #fff; border: none; border-radius: var(--radius); padding: 14px 32px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .holistic-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .holistic-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .summary-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 40px; }
+    .summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
+    .summary-card .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .summary-card .value { font-size: 28px; font-weight: 800; }
+    .test-case { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; }
+    .test-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .test-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .test-meta { font-size: 12px; color: var(--text-muted); }
+    .test-header-right { display: flex; align-items: center; gap: 12px; }
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+    .badge.pass    { background: rgba(34,197,94,0.15);  color: var(--green); }
+    .badge.fail    { background: rgba(239,68,68,0.15);  color: var(--red); }
+    .badge.warn    { background: rgba(234,179,8,0.15);  color: var(--yellow); }
+    .badge.running { background: rgba(99,102,241,0.15); color: var(--accent-light); }
+    .badge.pending { background: rgba(139,139,160,0.1); color: var(--text-muted); }
+    .test-body { padding: 24px; }
+    .progress-section { margin-bottom: 20px; }
+    .progress-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+    .progress-outer { height: 6px; background: var(--bg-elevated); border-radius: 100px; overflow: hidden; margin-bottom: 8px; }
+    .progress-inner { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); border-radius: 100px; transition: width 0.3s ease; }
+    .progress-log { font-size: 12px; color: var(--text-muted); font-family: monospace; background: var(--bg-elevated); border-radius: 8px; padding: 12px; max-height: 150px; overflow-y: auto; }
+    .profile-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .chip { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 100px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-muted); }
+    .chip.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); color: var(--accent-light); }
+    .chip.reg { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); color: var(--green); }
+    .description-box { font-size: 13px; color: var(--text-muted); line-height: 1.7; padding: 12px 16px; background: var(--bg-elevated); border-radius: 8px; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+    .match     { color: var(--green);  font-weight: 700; }
+    .mismatch  { color: var(--red);    font-weight: 700; }
+    .warn-text { color: var(--yellow); font-weight: 700; }
+    .pillar-row { display: grid; grid-template-columns: 200px 1fr 60px; gap: 12px; align-items: center; margin-bottom: 10px; }
+    .pillar-name { font-size: 12px; color: var(--text-muted); }
+    .bar-outer { height: 6px; background: var(--bg-elevated); border-radius: 100px; overflow: hidden; }
+    .bar-inner { height: 100%; border-radius: 100px; }
+    .pillar-pct { font-size: 13px; font-weight: 700; text-align: right; }
+    .validation-block { background: var(--bg-elevated); border-radius: var(--radius); padding: 16px 20px; margin-top: 16px; }
+    .validation-block h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--accent-light); }
+    .validation-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+    .validation-row .vl { color: var(--text-muted); }
+    .ai-block { background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(167,139,250,0.05)); border: 1px solid rgba(99,102,241,0.2); border-radius: var(--radius); padding: 20px 24px; margin-top: 16px; }
+    .ai-block h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--accent-light); display: flex; align-items: center; gap: 8px; }
+    .ai-badge { font-size: 10px; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 100px; font-weight: 700; }
+    .ai-text { font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+    .score-compare { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .score-box { background: var(--bg-elevated); border-radius: var(--radius); padding: 16px 20px; text-align: center; border: 1px solid var(--border); }
+    .score-box .sb-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .score-box .sb-value { font-size: 32px; font-weight: 900; }
+    .score-box .sb-tier  { font-size: 12px; font-weight: 600; margin-top: 4px; }
+    .answers-toggle { font-size: 12px; color: var(--accent-light); cursor: pointer; margin-top: 16px; display: inline-block; }
+    .answers-toggle:hover { text-decoration: underline; }
+    .answers-table { display: none; margin-top: 8px; }
+    .answers-table.open { display: table; }
+    .answers-table td { font-size: 11px; padding: 6px 10px; }
+    .answers-table th { font-size: 10px; }
+    .section-label { font-size: 18px; font-weight: 700; margin-bottom: 16px; margin-top: 32px; }
+    .error-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--red); margin-top: 12px; }
+    .holistic-section { background: var(--bg-card); border: 1px solid rgba(99,102,241,0.3); border-radius: var(--radius); padding: 32px; margin-top: 40px; }
+    .holistic-section h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .holistic-section .hs-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+    .holistic-content { font-size: 14px; color: var(--text-muted); line-height: 1.9; }
+    .holistic-content h3 { color: var(--accent-light); font-size: 15px; margin: 20px 0 8px; }
+    .holistic-content li { margin: 4px 0; padding-left: 12px; }
+    .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #singleSelect option { background: var(--bg-elevated); color: var(--text); }
+    #singleSelect:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(99,102,241,0.2); }
+    #singleSelect:hover { border-color: var(--accent-light); }
+  </style>
+</head>
+<body>
+
+  <h1>CRMF AI Test Runner</h1>
+  <p class="subtitle">AI-powered stress testing · DukeGPT as assessor · 7 real-world org profiles · Duke MEng Cybersecurity Capstone</p>
+
+  <div class="controls">
+    <button class="run-btn" id="runAllBtn" onclick="runAllTests()">▶ Run All 7 Tests</button>
+    <span style="font-size:13px;color:var(--text-muted)">or run individually →</span>
+    <select id="singleSelect" style="background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:10px 16px;font-size:13px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b8ba0%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22%3E%3C/polyline%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;min-width:240px;">
+      <option value="">Select test case...</option>
+    </select>
+    <button class="run-single-btn" onclick="runSingleTest()">▶ Run Selected</button>
+    <button class="holistic-btn" id="holisticBtn" onclick="generateHolisticReport()" disabled>✦ Generate Holistic Report</button>
+  </div>
+
+  <div id="summary-bar" class="summary-bar" style="display:none"></div>
+  <div id="results-container"></div>
+  <div id="holistic-container"></div>
+
+  <script src="js/questions.js"></script>
+  <script>
+
+  // ============================================================
+  // CONFIG
+  // ============================================================
+  const DUKE_ENDPOINT = "https://litellm.oit.duke.edu/v1/chat/completions";
+  const DUKE_TOKEN    = "Bearer YOUR_DUKE_API_TOKEN"; // Replace with your own DukeGPT API token
+  const DUKE_MODEL    = "GPT 4.1 Mini";
+  const BATCH_SIZE    = 15;
+  const MAX_TOKENS    = 8000;
+
+  // ============================================================
+  // TEST CASES
+  // sizeDetail  — raw answers to the 5 size scoring questions
+  // fundingDetail — raw answers to the 5 funding scoring questions
+  // These explain WHY the org is Large/Small/Medium and
+  // Well Funded/Moderate/Limited to the AI assessor
+  // ============================================================
+  const TEST_CASES = [
+    {
+      id: "TC01",
+      name: "Large US Investment Bank",
+      description: "Large US investment bank, mature well-funded cybersecurity. 50+ dedicated security staff, cloud-heavy, AI for trading analytics, agentic AI for compliance workflows, many third-party vendors, active software dev function. Regulated: SEC, SOX, DORA, PCI DSS, ISO 27001.",
+      sizeDetail: "Employees: More than 1000 | Revenue: More than 1B | Locations: More than 50 | Multi-country operations: Yes | Critical systems: More than 50",
+      fundingDetail: "Dedicated cyber budget: Yes | Budget allocation: More than 15% of IT budget | Security staff: More than 20 in-house | Uses MSSP: Yes | Cyber insurance: Yes",
+      profile: {
+        orgType: "Financial Services", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: false, usesAI: true, usesAgenticAI: true,
+        processesPayments: true, sensitiveData: true, thirdPartyVendors: true, softwareDev: true,
+        regulations: ["SEC","SOX","DORA","PCI DSS","ISO 27001"]
+      }
+    },
+    {
+      id: "TC02",
+      name: "Small Rural Hospital",
+      description: "Small rural hospital, 45 staff, very limited IT budget, NO dedicated security team, NO cloud, NO AI. Single part-time IT contractor. Minimal documentation, NO formal incident response plan, NO cyber insurance, NO security testing ever conducted. Handles sensitive patient data. Regulated: HIPAA only.",
+      sizeDetail: "Employees: Less than 50 | Revenue: Less than 10M | Locations: 1 | Multi-country operations: No | Critical systems: Less than 5",
+      fundingDetail: "Dedicated cyber budget: No | Budget allocation: Less than 5% of IT budget | Security staff: None | Uses MSSP: No | Cyber insurance: No",
+      profile: {
+        orgType: "Healthcare", orgSize: "Small", fundingLevel: "Limited",
+        usesCloud: false, usesOT: false, usesAI: false, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: true, thirdPartyVendors: false, softwareDev: false,
+        regulations: ["HIPAA"]
+      }
+    },
+    {
+      id: "TC03",
+      name: "Mid-size Regional Bank",
+      description: "Mid-size regional bank, 3 states, moderate security investment. 8-person security team, cloud for some services, processes payments, third-party core banking vendors. Basic IRP documentation but limited testing. No AI deployed. Maturing programme with significant gaps in testing and coverage. Regulated: DORA, PCI DSS.",
+      sizeDetail: "Employees: 201 to 1000 | Revenue: 100M to 1B | Locations: 2 to 10 | Multi-country operations: No | Critical systems: 21 to 50",
+      fundingDetail: "Dedicated cyber budget: Yes | Budget allocation: 5 to 10% of IT budget | Security staff: 6 to 20 in-house | Uses MSSP: Yes | Cyber insurance: Yes",
+      profile: {
+        orgType: "Financial Services", orgSize: "Medium", fundingLevel: "Moderate",
+        usesCloud: true, usesOT: false, usesAI: false, usesAgenticAI: false,
+        processesPayments: true, sensitiveData: true, thirdPartyVendors: true, softwareDev: false,
+        regulations: ["DORA","PCI DSS"]
+      }
+    },
+    {
+      id: "TC04",
+      name: "Large Power Grid Operator",
+      description: "Large national power grid operator, well-funded. Extensive OT and SCADA infrastructure across multiple sites. Cloud for corporate IT, many third-party grid component vendors. Dedicated OT security team, regular tabletop exercises, strong governance. AI for predictive maintenance. No software dev. Regulated: NERC CIP, ISO 27001.",
+      sizeDetail: "Employees: More than 1000 | Revenue: More than 1B | Locations: More than 50 | Multi-country operations: No | Critical systems: More than 50",
+      fundingDetail: "Dedicated cyber budget: Yes | Budget allocation: More than 15% of IT budget | Security staff: More than 20 in-house | Uses MSSP: Yes | Cyber insurance: Yes",
+      profile: {
+        orgType: "Energy and Utilities", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: true, usesAI: true, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: false, thirdPartyVendors: true, softwareDev: false,
+        regulations: ["NERC CIP","ISO 27001"]
+      }
+    },
+    {
+      id: "TC05",
+      name: "Small Manufacturing Plant",
+      description: "Small family-owned manufacturer, 35 employees, very limited IT budget. Legacy OT with NO network segmentation. Owner manages IT with NO security knowledge. NO cloud, NO AI, NO security vendors, NO policies, NO IRP, NO tested backups, NEVER had a security assessment. No formal regulations.",
+      sizeDetail: "Employees: Less than 50 | Revenue: Less than 10M | Locations: 1 | Multi-country operations: No | Critical systems: Less than 5",
+      fundingDetail: "Dedicated cyber budget: No | Budget allocation: Less than 5% of IT budget | Security staff: None | Uses MSSP: No | Cyber insurance: No",
+      profile: {
+        orgType: "Manufacturing and OT", orgSize: "Small", fundingLevel: "Limited",
+        usesCloud: false, usesOT: true, usesAI: false, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: false, thirdPartyVendors: false, softwareDev: false,
+        regulations: ["None"]
+      }
+    },
+    {
+      id: "TC06",
+      name: "Large Teaching Hospital",
+      description: "Large academic medical center, well-funded. Extensive cloud, AI for clinical decision support and diagnostics, large volumes of sensitive patient data, many third-party medical device vendors. Dedicated CISO, 25-person security team, active red team programme, regular exercises. Some gaps in medical device management. Regulated: HIPAA, NIST CSF, ISO 27001.",
+      sizeDetail: "Employees: More than 1000 | Revenue: More than 1B | Locations: 11 to 50 | Multi-country operations: No | Critical systems: More than 50",
+      fundingDetail: "Dedicated cyber budget: Yes | Budget allocation: 10 to 15% of IT budget | Security staff: More than 20 in-house | Uses MSSP: Yes | Cyber insurance: Yes",
+      profile: {
+        orgType: "Healthcare", orgSize: "Large", fundingLevel: "Well Funded",
+        usesCloud: true, usesOT: false, usesAI: true, usesAgenticAI: false,
+        processesPayments: false, sensitiveData: true, thirdPartyVendors: true, softwareDev: true,
+        regulations: ["HIPAA","NIST CSF","ISO 27001"]
+      }
+    },
+    {
+      id: "TC07",
+      name: "Mid-size Fintech Startup",
+      description: "Fast-growing fintech, 200 employees, moderate security investment. Cloud-native, AI for fraud detection and analytics, agentic AI for automated customer onboarding. Processes payments, sensitive financial data, cloud providers and third-party APIs, active software dev. Security growing but immature — controls defined but inconsistently implemented and rarely tested. Regulated: SOC2, GDPR, PCI DSS.",
+      sizeDetail: "Employees: 50 to 200 | Revenue: 10M to 100M | Locations: 2 to 10 | Multi-country operations: Yes | Critical systems: 21 to 50",
+      fundingDetail: "Dedicated cyber budget: Yes | Budget allocation: 10 to 15% of IT budget | Security staff: 6 to 20 in-house | Uses MSSP: No | Cyber insurance: Yes",
+      profile: {
+        orgType: "Financial Services", orgSize: "Medium", fundingLevel: "Moderate",
+        usesCloud: true, usesOT: false, usesAI: true, usesAgenticAI: true,
+        processesPayments: true, sensitiveData: true, thirdPartyVendors: true, softwareDev: true,
+        regulations: ["SOC2","GDPR","PCI DSS"]
+      }
+    }
+  ];
+
+  // ============================================================
+  // STATE
+  // ============================================================
+  const runState = {};
+  TEST_CASES.forEach(tc => {
+    runState[tc.id] = {
+      status: "pending", answers: {}, pillarScores: {},
+      globalIndex: 0, logs: [], progress: 0,
+      aiScore: null, aiTier: null, aiRationale: "",
+      aiReflection: "", startTime: null, duration: null
+    };
+  });
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  window.onload = () => {
+    const select = document.getElementById("singleSelect");
+    TEST_CASES.forEach(tc => {
+      const opt = document.createElement("option");
+      opt.value = tc.id;
+      opt.textContent = `${tc.id} — ${tc.name}`;
+      select.appendChild(opt);
+    });
+    renderAllCards();
+  };
+
+  // ============================================================
+  // RENDER
+  // ============================================================
+  function renderAllCards() {
+    const container = document.getElementById("results-container");
+    container.innerHTML = `<div class="section-label">Test Cases</div>`;
+    TEST_CASES.forEach(tc => {
+      const card = document.createElement("div");
+      card.className = "test-case";
+      card.id = `card-${tc.id}`;
+      card.innerHTML = buildCardHTML(tc, runState[tc.id]);
+      container.appendChild(card);
+    });
+  }
+
+  function updateCard(tcId) {
+    const tc   = TEST_CASES.find(t => t.id === tcId);
+    const card = document.getElementById(`card-${tcId}`);
+    if (card) card.innerHTML = buildCardHTML(tc, runState[tcId]);
+  }
+
+  function addLog(tcId, message) {
+    runState[tcId].logs.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+    const el = document.getElementById(`log-${tcId}`);
+    if (el) {
+      el.innerHTML = runState[tcId].logs.map(l => `<div>${l}</div>`).join("");
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+
+  // ============================================================
+  // BUILD ORG CONTEXT — used consistently across all phases
+  // ============================================================
+  function buildOrgContext(tc) {
+    const p = tc.profile;
+    const techActive = [
+      p.usesCloud        ? "Cloud services"              : null,
+      p.usesOT           ? "OT / SCADA / ICS systems"    : null,
+      p.usesAI           ? "AI tools internally"          : null,
+      p.usesAgenticAI    ? "Agentic AI (autonomous)"      : null,
+      p.processesPayments? "Payment processing"           : null,
+      p.sensitiveData    ? "Sensitive personal data"      : null,
+      p.thirdPartyVendors? "Third-party vendor dependencies": null,
+      p.softwareDev      ? "Active software development"  : null
+    ].filter(Boolean);
+
+    return `Organisation: ${tc.name}
+Type: ${p.orgType} | Size: ${p.orgSize} | Funding: ${p.fundingLevel}
+Description: ${tc.description}
+
+Size inputs (why this org is ${p.orgSize}):
+${tc.sizeDetail}
+
+Funding inputs (why this org is ${p.fundingLevel}):
+${tc.fundingDetail}
+
+Technology environment:
+${techActive.length > 0 ? techActive.map(t => `- ${t}`).join("\n") : "- No special technology flags"}
+
+Applicable regulations:
+${p.regulations.join(", ")}`;
+  }
+
+  // ============================================================
+  // BUILD CARD HTML
+  // ============================================================
+  function buildCardHTML(tc, state) {
+    const techFlags = [
+      tc.profile.usesCloud         ? "Cloud"          : null,
+      tc.profile.usesOT            ? "OT"             : null,
+      tc.profile.usesAI            ? "AI"             : null,
+      tc.profile.usesAgenticAI     ? "Agentic AI"     : null,
+      tc.profile.processesPayments ? "Payments"       : null,
+      tc.profile.sensitiveData     ? "Sensitive Data"  : null,
+      tc.profile.thirdPartyVendors ? "3rd Party"      : null,
+      tc.profile.softwareDev       ? "Software Dev"   : null
+    ].filter(Boolean);
+
+    const statusBadge = {
+      pending: `<span class="badge pending">Pending</span>`,
+      running: `<span class="badge running">⟳ Running</span>`,
+      done:    state.overallStatus === "validated"
+                 ? `<span class="badge pass">✓ Validated</span>`
+                 : state.overallStatus === "acceptable"
+                   ? `<span class="badge warn">⚠ Acceptable</span>`
+                   : `<span class="badge fail">✗ Needs Review</span>`,
+      error:   `<span class="badge fail">✗ Error</span>`
+    }[state.status] || `<span class="badge pending">Pending</span>`;
+
+    let bodyHTML = `
+      <div class="profile-chips">
+        <span class="chip active">${tc.profile.orgType}</span>
+        <span class="chip active">${tc.profile.orgSize}</span>
+        <span class="chip active">${tc.profile.fundingLevel}</span>
+        ${techFlags.map(f => `<span class="chip active">${f}</span>`).join("")}
+        ${tc.profile.regulations.map(r => `<span class="chip reg">${r}</span>`).join("")}
+      </div>
+      <div class="description-box"><strong>Scenario:</strong> ${tc.description}</div>
+    `;
+
+    // PROGRESS
+    if (state.status === "running") {
+      bodyHTML += `
+        <div class="progress-section">
+          <div class="progress-label">${state.currentStep || "Starting..."}</div>
+          <div class="progress-outer"><div class="progress-inner" style="width:${state.progress||0}%"></div></div>
+          <div class="progress-log" id="log-${tc.id}">${state.logs.map(l=>`<div>${l}</div>`).join("")}</div>
+        </div>
+      `;
+    }
+
+    // RESULTS
+    if (state.status === "done") {
+      const engineColor = getTierColor(state.actualTier);
+      const aiColor     = state.aiTier ? getTierColor(state.aiTier) : "var(--text-muted)";
+      const aiScore     = state.aiScore || 0;
+      const engineScore = Math.round(state.globalIndex);
+      const scoreDiff   = Math.abs(aiScore - engineScore);
+
+      const diffStatus = scoreDiff <= 10
+        ? { label: `✓ ${scoreDiff}% difference — Strong alignment`, cls: "match" }
+        : scoreDiff <= 20
+          ? { label: `⚠ ${scoreDiff}% difference — Acceptable variation`, cls: "warn-text" }
+          : { label: `✗ ${scoreDiff}% difference — Significant divergence`, cls: "mismatch" };
+
+      const tierOrder     = ["Critical Risk","Vulnerable","Developing","Resilient","Iron Fortress"];
+      const aiScoreMapped = getTierLocal(state.aiScore || 0);
+      const aiIdx         = Math.min(
+        tierOrder.indexOf(state.aiTier) === -1 ? 99 : tierOrder.indexOf(state.aiTier),
+        tierOrder.indexOf(aiScoreMapped)
+      );
+      const engineIdx     = tierOrder.indexOf(state.actualTier);
+      const tierDiff      = Math.abs(aiIdx - engineIdx);
+
+      const tierDiffStatus = tierDiff === 0
+        ? { label: "✓ Exact tier match", cls: "match" }
+        : tierDiff === 1
+          ? { label: `⚠ Adjacent tiers — Acceptable`, cls: "warn-text" }
+          : { label: `✗ ${tierDiff} tiers apart — Investigate`, cls: "mismatch" };
+
+      const overallStatus = scoreDiff <= 10 && tierDiff <= 1
+        ? { label: "✓ VALIDATED", cls: "match" }
+        : scoreDiff <= 20 && tierDiff <= 1
+          ? { label: "⚠ ACCEPTABLE WITH NOTES", cls: "warn-text" }
+          : { label: "✗ NEEDS REVIEW", cls: "mismatch" };
+
+      // Score comparison boxes
+      bodyHTML += `
+        <div class="score-compare">
+          <div class="score-box">
+            <div class="sb-label">Engine Score</div>
+            <div class="sb-value" style="color:${engineColor}">${engineScore}%</div>
+            <div class="sb-tier" style="color:${engineColor}">${state.actualTier}</div>
+          </div>
+          <div class="score-box">
+            <div class="sb-label">AI Score</div>
+            <div class="sb-value" style="color:${aiColor}">${aiScore}%</div>
+            <div class="sb-tier" style="color:${aiColor}">${state.aiTier || "—"}</div>
+          </div>
+          <div class="score-box">
+            <div class="sb-label">Difference</div>
+            <div class="sb-value" style="color:${scoreDiff<=10?"var(--green)":scoreDiff<=20?"var(--yellow)":"var(--red)"}">${scoreDiff}%</div>
+            <div class="sb-tier" style="color:var(--text-muted)">Score delta</div>
+          </div>
+        </div>
+      `;
+
+      // Pillar breakdown
+      bodyHTML += `<div style="margin-bottom:20px">`;
+      Object.keys(FRAMEWORK.pillars).forEach(key => {
+        const score = state.pillarScores[key] || 0;
+        const color = getBarColor(score);
+        bodyHTML += `
+          <div class="pillar-row">
+            <div class="pillar-name">${FRAMEWORK.pillars[key].name}</div>
+            <div class="bar-outer"><div class="bar-inner" style="width:${score}%;background:${color}"></div></div>
+            <div class="pillar-pct" style="color:${color}">${Math.round(score)}%</div>
+          </div>
+        `;
+      });
+      bodyHTML += `</div>`;
+
+      // AI independent assessment
+      if (state.aiRationale) {
+        bodyHTML += `
+          <div class="ai-block">
+            <h4>AI Independent Assessment <span class="ai-badge">DukeGPT</span></h4>
+            <div class="ai-text">${formatAIText(state.aiRationale)}</div>
+          </div>
+        `;
+      }
+
+      // AI reflection
+      if (state.aiReflection) {
+        bodyHTML += `
+          <div class="ai-block" style="margin-top:12px">
+            <h4>AI Reflection on Engine Score <span class="ai-badge">DukeGPT</span></h4>
+            <div class="ai-text">${formatAIText(state.aiReflection)}</div>
+          </div>
+        `;
+      }
+
+      // Validation summary
+      bodyHTML += `
+        <div class="validation-block">
+          <h4>Validation Summary</h4>
+          <div class="validation-row">
+            <span class="vl">Engine score</span>
+            <span class="vr" style="color:${engineColor};font-weight:700">${engineScore}% — ${state.actualTier}</span>
+          </div>
+          <div class="validation-row">
+            <span class="vl">AI predicted score</span>
+            <span class="vr" style="color:${aiColor};font-weight:700">${aiScore}% — ${state.aiTier || "—"}</span>
+          </div>
+          <div class="validation-row">
+            <span class="vl">Score alignment</span>
+            <span class="vr ${diffStatus.cls}">${diffStatus.label}</span>
+          </div>
+          <div class="validation-row">
+            <span class="vl">Tier alignment</span>
+            <span class="vr ${tierDiffStatus.cls}">${tierDiffStatus.label}</span>
+          </div>
+          <div class="validation-row">
+            <span class="vl">Questions assessed</span>
+            <span class="vr" style="color:var(--text-muted)">${state.totalQuestions}</span>
+          </div>
+          <div class="validation-row">
+            <span class="vl">Total assessment time</span>
+            <span class="vr" style="color:var(--accent-light)">⏱ ${state.duration ? formatDuration(state.duration) : "—"}</span>
+          </div>
+          <div class="validation-row" style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
+            <span class="vl" style="font-weight:700;color:var(--text)">Overall Validation</span>
+            <span class="vr ${overallStatus.cls}" style="font-size:14px">${overallStatus.label}</span>
+          </div>
+        </div>
+      `;
+
+      // Show all answers toggle
+      bodyHTML += `
+        <span class="answers-toggle" onclick="toggleAnswers('at-${tc.id}')">
+          ▶ Show all AI answers (${Object.keys(state.answers).length} questions)
+        </span>
+        <table class="answers-table" id="at-${tc.id}">
+          <thead>
+            <tr><th>ID</th><th>Implementation</th><th>Test Type</th><th>Coverage</th><th>Last Reviewed</th><th>Stress Tested</th></tr>
+          </thead>
+          <tbody>
+            ${Object.entries(state.answers).map(([qid,ans]) => `
+              <tr>
+                <td style="color:var(--accent-light);font-weight:700">${qid}</td>
+                <td>${ans.implementation||"—"}</td>
+                <td>${ans.testType||"—"}</td>
+                <td>${ans.coverageScope||"—"}</td>
+                <td>${ans.lastReviewed||"—"}</td>
+                <td>${ans.stressTested||"—"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    if (state.status === "error") {
+      bodyHTML += `<div class="error-box">Error: ${state.error}</div>`;
+    }
+
+    return `
+      <div class="test-header">
+        <div>
+          <div class="test-title">${tc.id} — ${tc.name}</div>
+          <div class="test-meta">
+            ${tc.profile.orgType} · ${tc.profile.orgSize} · ${tc.profile.fundingLevel}
+            ${state.status === "done" ? ` · Engine: ${Math.round(state.globalIndex)}% · AI: ${state.aiScore||"—"}%` : ""}
+            ${state.duration ? ` · ⏱ ${formatDuration(state.duration)}` : ""}
+          </div>
+        </div>
+        <div class="test-header-right">${statusBadge}</div>
+      </div>
+      <div class="test-body">${bodyHTML}</div>
+    `;
+  }
+
+  // ============================================================
+  // CORE: RUN ONE TEST CASE
+  // ============================================================
+  async function runTestCase(tc) {
+    const state = runState[tc.id];
+    state.status    = "running";
+    state.logs      = [];
+    state.answers   = {};
+    state.progress  = 0;
+    state.startTime = Date.now();
+    updateCard(tc.id);
+
+    // Build org context once — reused across all phases
+    const orgContext = buildOrgContext(tc);
+
+    try {
+      // Get applicable questions
+      const applicable = [];
+      for (const pillarKey of Object.keys(FRAMEWORK.pillars)) {
+        for (const q of FRAMEWORK.pillars[pillarKey].questions) {
+          if (isApplicable(q, tc.profile)) applicable.push({ ...q, pillarKey });
+        }
+      }
+      state.totalQuestions = applicable.length;
+      addLog(tc.id, `${applicable.length} applicable questions found`);
+
+      // Build batches
+      const batches = [];
+      for (let i = 0; i < applicable.length; i += BATCH_SIZE) {
+        batches.push(applicable.slice(i, i + BATCH_SIZE));
+      }
+      addLog(tc.id, `${batches.length} batches of ${BATCH_SIZE} questions each`);
+
+      // PHASE 1 — Answer all questions in batches
+      for (let b = 0; b < batches.length; b++) {
+        const batch = batches[b];
+        state.currentStep = `Phase 1 — Batch ${b+1} of ${batches.length}`;
+        state.progress    = Math.round(((b+1) / (batches.length + 2)) * 100);
+        addLog(tc.id, `Answering batch ${b+1}/${batches.length} (${batch.length} questions)...`);
+        updateCard(tc.id);
+
+        const questionsText = batch.map(q =>
+          `{"id":"${q.id}","q":"${q.q.replace(/"/g,"'")}"}`
+        ).join("\n");
+
+        const batchMessages = [
+          {
+            role: "system",
+            content: "You are a cyber security assessor. Respond only with valid JSON arrays. No markdown, no explanation, no commentary."
+          },
+          {
+            role: "user",
+            content: `${orgContext}
+
+Answer each question individually as a realistic cyber security assessor.
+
+Rules:
+1. Read each question carefully and answer based on what this specific control requires
+2. Use the org description AND the size/funding/technology details above to calibrate your answers
+3. Well Funded Large orgs with dedicated security teams: most controls should be DEFINED or OPTIMISED
+4. Limited Small orgs with no security team: most controls should be MISSING or INITIAL
+5. Vary answers per question — advanced and technology controls differ from basic governance controls
+6. Adjacent questions may share the same answer when that is genuinely realistic — that is fine
+7. Do NOT give every single question an identical answer
+
+Return ONLY a JSON array. Each element:
+{"implementation":"...","testType":"...","coverageScope":"...","lastReviewed":"...","stressTested":"..."}
+
+Valid values:
+implementation: ${JSON.stringify(Object.keys(FRAMEWORK.scoringTables.implementation))}
+testType: ${JSON.stringify(Object.keys(FRAMEWORK.scoringTables.testType))}
+coverageScope: ${JSON.stringify(Object.keys(FRAMEWORK.scoringTables.coverageScope))}
+lastReviewed: ${JSON.stringify(Object.keys(FRAMEWORK.scoringTables.lastReviewed))}
+stressTested: ${JSON.stringify(Object.keys(FRAMEWORK.scoringTables.stressTested))}
+If implementation is "MISSING: Does not exist" set all other fields to "".
+
+Questions:
+${questionsText}
+
+Start with [ and end with ].`
+          }
+        ];
+
+        let batchText;
+        try {
+          batchText = await callDuke(batchMessages, MAX_TOKENS);
+        } catch(e) {
+          if (e.message.includes("429")) {
+            addLog(tc.id, `Rate limit hit — waiting 65 seconds...`);
+            await sleep(65000);
+            batchText = await callDuke(batchMessages, MAX_TOKENS);
+          } else {
+            addLog(tc.id, `Batch ${b+1} failed, retrying in 5s...`);
+            await sleep(5000);
+            batchText = await callDuke(batchMessages, MAX_TOKENS);
+          }
+        }
+
+        const batchAnswers = parseBatchAnswers(batchText, batch, b+1);
+        Object.assign(state.answers, batchAnswers);
+
+        if (b < batches.length - 1) await sleep(4000);
+      }
+
+      addLog(tc.id, `All questions answered. Running scoring engine...`);
+
+      // Score with engine
+      const { pillarScores, globalIndex } = scoreWithEngine(tc.profile, state.answers);
+      state.pillarScores = pillarScores;
+      state.globalIndex  = globalIndex;
+      state.actualTier   = getTierLocal(globalIndex);
+      addLog(tc.id, `Engine score: ${Math.round(globalIndex)}% — ${state.actualTier}`);
+
+      // Count answer distribution
+      const missingCount    = Object.values(state.answers).filter(a => a.implementation === "MISSING: Does not exist").length;
+      const initialCount    = Object.values(state.answers).filter(a => a.implementation === "INITIAL: Ad hoc, undocumented").length;
+      const developingCount = Object.values(state.answers).filter(a => a.implementation === "DEVELOPING: Partially implemented").length;
+      const definedCount    = Object.values(state.answers).filter(a => a.implementation === "DEFINED: Fully documented and implemented").length;
+      const optimisedCount  = Object.values(state.answers).filter(a => a.implementation === "OPTIMISED: Continuously improved").length;
+
+      // PHASE 2 — AI independent score
+      // Sends full org context + tech/compliance details + answer distribution
+      state.currentStep = "Phase 2 — AI independent scoring...";
+      state.progress    = Math.round(((batches.length + 1) / (batches.length + 2)) * 100);
+      updateCard(tc.id);
+      addLog(tc.id, `Requesting AI independent score...`);
+
+      const phase2Messages = [
+        {
+          role: "system",
+          content: "You are a senior cyber security assessor. Respond in plain text only. No JSON, no arrays, no brackets, no bullet formatting."
+        },
+        {
+          role: "user",
+          content: `You have just completed a full cyber resilience assessment. Here is the complete organisation context:
+
+${orgContext}
+
+Your answers across ${state.totalQuestions} applicable questions produced this distribution:
+- MISSING (does not exist): ${missingCount} controls
+- INITIAL (ad hoc, undocumented): ${initialCount} controls
+- DEVELOPING (partially implemented): ${developingCount} controls
+- DEFINED (fully implemented): ${definedCount} controls
+- OPTIMISED (continuously improved): ${optimisedCount} controls
+
+Based on BOTH your answer distribution AND the full organisation context above — including the technology environment, regulatory obligations, size, and funding — provide your independent expert assessment:
+
+Respond in EXACTLY this format — plain text only:
+SCORE: [number 0-100]
+TIER: [Critical Risk / Vulnerable / Developing / Resilient / Iron Fortress]
+RATIONALE: [3-4 sentences explaining your score based on the distribution and org context]
+STRONGEST: [pillar name you expect scored highest]
+WEAKEST: [pillar name you expect scored lowest]`
+        }
+      ];
+
+      const aiScoreResp = await callDuke(phase2Messages, 600);
+      const parsed      = parseAIScoreResponse(aiScoreResp);
+      state.aiScore     = parsed.score;
+      state.aiTier      = parsed.tier;
+      state.aiRationale = parsed.rationale;
+      addLog(tc.id, `AI score: ${state.aiScore}% — ${state.aiTier}`);
+
+      // PHASE 3 — Reveal engine score and ask for reflection
+      // Sends full org context + Phase 2 AI rationale + engine results
+      state.currentStep = "Phase 3 — AI reflection...";
+      state.progress    = 95;
+      updateCard(tc.id);
+      addLog(tc.id, `Requesting AI reflection...`);
+
+      const pillarSummary = Object.keys(FRAMEWORK.pillars).map(k =>
+        `${FRAMEWORK.pillars[k].name}: ${Math.round(pillarScores[k])}%`
+      ).join(", ");
+
+      const phase3Messages = [
+        {
+          role: "system",
+          content: "You are a senior cyber security assessor. Respond in plain text only. No JSON, no arrays, no brackets."
+        },
+        {
+          role: "user",
+          content: `You assessed: ${tc.name}
+${orgContext}
+
+Your answer distribution: MISSING=${missingCount}, INITIAL=${initialCount}, DEVELOPING=${developingCount}, DEFINED=${definedCount}, OPTIMISED=${optimisedCount}
+
+In Phase 2 you predicted:
+Score: ${state.aiScore}% — ${state.aiTier}
+Your rationale: ${state.aiRationale}
+
+Our scoring engine calculated:
+Score: ${Math.round(globalIndex)}% — ${state.actualTier}
+Pillar breakdown: ${pillarSummary}
+Score difference: ${Math.abs((state.aiScore||0) - Math.round(globalIndex))}%
+
+In 3-4 sentences of plain text:
+Does the engine score align with your Phase 2 prediction and rationale? What does the pillar breakdown reveal that your prediction may have missed? What are the most critical gaps this organisation should prioritise?`
+        }
+      ];
+
+      const reflectionResp = await callDuke(phase3Messages, 500);
+      state.aiReflection   = reflectionResp;
+
+      // Calculate validation status using both AI label and AI score mapping
+      const scoreDiff         = Math.abs((state.aiScore||0) - Math.round(globalIndex));
+      const tierOrder         = ["Critical Risk","Vulnerable","Developing","Resilient","Iron Fortress"];
+      const aiScoreMappedTier = getTierLocal(state.aiScore || 0);
+      const tierDiffFromLabel = Math.abs(tierOrder.indexOf(state.aiTier)          - tierOrder.indexOf(state.actualTier));
+      const tierDiffFromScore = Math.abs(tierOrder.indexOf(aiScoreMappedTier)     - tierOrder.indexOf(state.actualTier));
+      const tierDiff          = Math.min(tierDiffFromLabel, tierDiffFromScore);
+
+      state.overallStatus = scoreDiff <= 10 && tierDiff <= 1 ? "validated"
+        : scoreDiff <= 20 && tierDiff <= 1 ? "acceptable"
+        : "needs_review";
+      state.overallPass   = state.overallStatus !== "needs_review";
+
+      // Record duration
+      state.duration = Math.round((Date.now() - state.startTime) / 1000);
+      state.status   = "done";
+      state.progress = 100;
+
+      addLog(tc.id, `Complete in ${formatDuration(state.duration)} — ${state.overallStatus.toUpperCase()}`);
+      updateCard(tc.id);
+
+    } catch(err) {
+      state.duration = Math.round((Date.now() - state.startTime) / 1000);
+      state.status   = "error";
+      state.error    = err.message;
+      addLog(tc.id, `ERROR: ${err.message}`);
+      updateCard(tc.id);
+    }
+  }
+
+  // ============================================================
+  // DUKE API CALL
+  // ============================================================
+  async function callDuke(messages, maxTokens) {
+    const response = await fetch(DUKE_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${DUKE_TOKEN}`
+      },
+      body: JSON.stringify({
+        model: DUKE_MODEL,
+        max_tokens: maxTokens,
+        temperature: 0.3,
+        messages: messages
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`API ${response.status}: ${err.substring(0,200)}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || "";
+    if (!text) throw new Error("Empty response from API");
+    return text.trim();
+  }
+
+  // ============================================================
+  // PARSE BATCH ANSWERS
+  // ============================================================
+  function parseBatchAnswers(text, batch, batchNum) {
+    const validOptions = {
+      implementation: Object.keys(FRAMEWORK.scoringTables.implementation),
+      testType:       Object.keys(FRAMEWORK.scoringTables.testType),
+      coverageScope:  Object.keys(FRAMEWORK.scoringTables.coverageScope),
+      lastReviewed:   Object.keys(FRAMEWORK.scoringTables.lastReviewed),
+      stressTested:   Object.keys(FRAMEWORK.scoringTables.stressTested)
+    };
+
+    let clean = text.trim();
+    if (clean.startsWith("```")) clean = clean.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      const match = clean.match(/\[[\s\S]*\]/);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+        } catch(e2) {
+          const objects = [];
+          const objRegex = /\{[^{}]*"implementation"[^{}]*\}/g;
+          let m;
+          while ((m = objRegex.exec(clean)) !== null) {
+            try { objects.push(JSON.parse(m[0])); } catch(e3) { /* skip */ }
+          }
+          if (objects.length > 0) { parsed = objects; }
+          else { throw new Error(`Failed to parse batch ${batchNum}: ${clean.substring(0,150)}`); }
+        }
+      } else {
+        const objects = [];
+        const objRegex = /\{[^{}]*"implementation"[^{}]*\}/g;
+        let m;
+        while ((m = objRegex.exec(clean)) !== null) {
+          try { objects.push(JSON.parse(m[0])); } catch(e2) { /* skip */ }
+        }
+        if (objects.length > 0) { parsed = objects; }
+        else { throw new Error(`No JSON found in batch ${batchNum}: ${clean.substring(0,150)}`); }
+      }
+    }
+
+    const answers = {};
+    parsed.forEach((ans, i) => {
+      const q = batch[i];
+      if (!q) return;
+      const safeImpl = validOptions.implementation.includes(ans.implementation)
+        ? ans.implementation : "INITIAL: Ad hoc, undocumented";
+      const missing = safeImpl === "MISSING: Does not exist";
+      answers[q.id] = {
+        implementation: safeImpl,
+        testType:      missing ? "" : (validOptions.testType.includes(ans.testType)           ? ans.testType      : "UNTESTED: Never exercised"),
+        coverageScope: missing ? "" : (validOptions.coverageScope.includes(ans.coverageScope) ? ans.coverageScope : "LIMITED: Less than 25% of environment"),
+        lastReviewed:  missing ? "" : (validOptions.lastReviewed.includes(ans.lastReviewed)   ? ans.lastReviewed  : "NEVER: Never reviewed"),
+        stressTested:  missing ? "" : (validOptions.stressTested.includes(ans.stressTested)   ? ans.stressTested  : "NO: Never stress tested")
+      };
+    });
+    return answers;
+  }
+
+  // ============================================================
+  // PARSE AI SCORE RESPONSE
+  // ============================================================
+  function parseAIScoreResponse(text) {
+    let clean = text.trim();
+    if (clean.startsWith("[")) {
+      try {
+        const arr = JSON.parse(clean);
+        if (Array.isArray(arr)) clean = arr.join(" ");
+      } catch(e) { /* leave as is */ }
+    }
+
+    const scoreMatch     = clean.match(/SCORE:\s*(\d+)/i);
+    const tierMatch      = clean.match(/TIER:\s*(.+?)(?:\n|$)/i);
+    const rationaleMatch = clean.match(/RATIONALE:\s*([\s\S]+?)(?:\nSTRONGEST:|$)/i);
+    const strongestMatch = clean.match(/STRONGEST:\s*(.+?)(?:\n|$)/i);
+    const weakestMatch   = clean.match(/WEAKEST:\s*(.+?)(?:\n|$)/i);
+
+    const score     = scoreMatch     ? parseInt(scoreMatch[1])  : null;
+    const tierRaw   = tierMatch      ? tierMatch[1].trim()      : "";
+    const rationale = rationaleMatch ? rationaleMatch[1].trim() : clean;
+    const strongest = strongestMatch ? strongestMatch[1].trim() : "";
+    const weakest   = weakestMatch   ? weakestMatch[1].trim()   : "";
+
+    const tierOrder = ["Critical Risk","Vulnerable","Developing","Resilient","Iron Fortress"];
+    const tier      = tierOrder.find(t => tierRaw.toLowerCase().includes(t.toLowerCase())) || tierRaw;
+
+    const fullRationale = rationale
+      + (strongest ? `\n\nStrongest pillar: ${strongest}` : "")
+      + (weakest   ? `\nWeakest pillar: ${weakest}`       : "");
+
+    return { score, tier, rationale: fullRationale };
+  }
+
+  // ============================================================
+  // SCORING ENGINE
+  // ============================================================
+  function scoreWithEngine(profile, answers) {
+    const cascadeZeros = getCascadeZeroIds(answers);
+    const pillarScores = {};
+    let total = 0;
+
+    for (const pillarKey of Object.keys(FRAMEWORK.pillars)) {
+      const pillar = FRAMEWORK.pillars[pillarKey];
+      let earned = 0, maxPossible = 0;
+      for (const q of pillar.questions) {
+        if (!isApplicable(q, profile)) continue;
+        maxPossible += q.w;
+        const ans = answers[q.id];
+        if (!ans?.implementation || ans.implementation === "MISSING: Does not exist" || cascadeZeros.has(q.id)) continue;
+        const st = FRAMEWORK.scoringTables, sw = FRAMEWORK.subWeights;
+        const inner = (st.implementation[ans.implementation]??0)*sw.implementation
+                    + (st.testType[ans.testType]??0)*sw.testType
+                    + (st.coverageScope[ans.coverageScope]??0)*sw.coverageScope
+                    + (st.lastReviewed[ans.lastReviewed]??0)*sw.lastReviewed
+                    + (st.stressTested[ans.stressTested]??0)*sw.stressTested;
+        const penalty = ans.testType === "UNTESTED: Never exercised" ? 0.4 : 1;
+        earned += q.w * inner * penalty;
+      }
+      pillarScores[pillarKey] = maxPossible === 0 ? 0 : (earned / maxPossible) * 100;
+      total += pillarScores[pillarKey];
+    }
+
+    return {
+      pillarScores,
+      globalIndex: total / Object.keys(FRAMEWORK.pillars).length
+    };
+  }
+
+  // ============================================================
+  // HOLISTIC REPORT
+  // Works for any number of completed cases (minimum 1)
+  // ============================================================
+  async function generateHolisticReport() {
+    const btn = document.getElementById("holisticBtn");
+    btn.disabled = true;
+    btn.textContent = "⟳ Generating...";
+
+    const container = document.getElementById("holistic-container");
+    container.innerHTML = `
+      <div class="holistic-section">
+        <h2>✦ Holistic Framework Validation Report</h2>
+        <div class="hs-sub">Cross-case analysis by DukeGPT</div>
+        <div class="holistic-content">
+          <div style="display:flex;align-items:center;gap:12px;color:var(--text-muted)">
+            <div class="spinner"></div> Generating holistic analysis...
+          </div>
+        </div>
+      </div>
+    `;
+    container.scrollIntoView({ behavior: "smooth" });
+
+    const doneCases = TEST_CASES.filter(tc => runState[tc.id].status === "done");
+
+    const summary = doneCases.map(tc => {
+      const s = runState[tc.id];
+      return `${tc.id} — ${tc.name}
+  Profile: ${tc.profile.orgType}, ${tc.profile.orgSize}, ${tc.profile.fundingLevel}
+  Size: ${tc.sizeDetail}
+  Funding: ${tc.fundingDetail}
+  Tech: Cloud=${tc.profile.usesCloud}, OT=${tc.profile.usesOT}, AI=${tc.profile.usesAI}, AgenticAI=${tc.profile.usesAgenticAI}, Payments=${tc.profile.processesPayments}, ThirdParty=${tc.profile.thirdPartyVendors}
+  Regulations: ${tc.profile.regulations.join(", ")}
+  Engine: ${Math.round(s.globalIndex)}% (${s.actualTier})
+  AI Score: ${s.aiScore}% (${s.aiTier})
+  Score delta: ${Math.abs((s.aiScore||0)-Math.round(s.globalIndex))}%
+  Pillar scores: ${Object.keys(FRAMEWORK.pillars).map(k=>`${FRAMEWORK.pillars[k].name.split(" ")[0]}:${Math.round(s.pillarScores[k]||0)}%`).join(", ")}
+  Answer distribution: MISSING=${Object.values(s.answers).filter(a=>a.implementation==="MISSING: Does not exist").length}, INITIAL=${Object.values(s.answers).filter(a=>a.implementation==="INITIAL: Ad hoc, undocumented").length}, DEVELOPING=${Object.values(s.answers).filter(a=>a.implementation==="DEVELOPING: Partially implemented").length}, DEFINED=${Object.values(s.answers).filter(a=>a.implementation==="DEFINED: Fully documented and implemented").length}, OPTIMISED=${Object.values(s.answers).filter(a=>a.implementation==="OPTIMISED: Continuously improved").length}
+  Duration: ${s.duration ? formatDuration(s.duration) : "—"}
+  Validation: ${s.overallStatus}`;
+    }).join("\n\n");
+
+    const holisticMessages = [
+      {
+        role: "system",
+        content: "You are a senior cyber resilience framework validator. Provide structured, insightful analysis in plain text with clear section headings."
+      },
+      {
+        role: "user",
+        content: `You have conducted AI-powered cyber resilience assessments of ${doneCases.length} organisations using the Cyber Resilience Maturity Framework (CRMF). Here are the complete results including full org profiles:
+
+${summary}
+
+Provide a holistic validation report covering these sections. Reference specific case IDs and scores throughout:
+
+1. FRAMEWORK VALIDITY
+Does the scoring engine produce results that align with expert AI judgment across cases? Are the scores defensible and internally consistent?
+
+2. CROSS-CASE PATTERNS
+What patterns emerge across org types, sizes, sectors, and funding levels? Is the relative ranking of organisations consistent with expectations — i.e. does a Large Well Funded org consistently outperform a Small Limited org?
+
+3. SCORING ENGINE CALIBRATION
+Where does the engine align well with AI judgment? Where does it diverge, and why? What does the engine-AI gap reveal about the difference between mathematical scoring and expert judgment?
+
+4. KEY FINDINGS
+The 3-5 most important findings from this validation exercise with specific reference to case scores.
+
+5. FRAMEWORK STRENGTHS
+What does the CRMF framework do particularly well based on these results?
+
+6. RECOMMENDATIONS
+What specific calibration or improvements would strengthen the framework?
+
+7. CAPSTONE CONCLUSION
+A 2-3 sentence conclusion suitable for a Duke MEng Cybersecurity capstone presentation defending this framework.
+
+Keep total response under 700 words. Be specific — reference actual case scores, not generalities.`
+      }
+    ];
+
+    try {
+      const report = await callDuke(holisticMessages, 2000);
+      container.innerHTML = `
+        <div class="holistic-section">
+          <h2>✦ Holistic Framework Validation Report</h2>
+          <div class="hs-sub">Cross-case analysis by DukeGPT · ${doneCases.length} of ${TEST_CASES.length} cases completed · Generated ${new Date().toLocaleString()}</div>
+          <div class="holistic-content">${formatAIText(report)}</div>
+        </div>
+      `;
+    } catch(err) {
+      container.innerHTML = `
+        <div class="holistic-section">
+          <div class="error-box">Failed to generate holistic report: ${err.message}</div>
+        </div>
+      `;
+    }
+
+    btn.disabled = false;
+    btn.textContent = "✦ Generate Holistic Report";
+  }
+
+  // ============================================================
+  // RUN ALL / SINGLE
+  // ============================================================
+  async function runAllTests() {
+    const btn = document.getElementById("runAllBtn");
+    btn.disabled = true;
+    btn.textContent = "⟳ Running...";
+
+    TEST_CASES.forEach(tc => {
+      runState[tc.id] = {
+        status:"pending", answers:{}, pillarScores:{}, globalIndex:0,
+        logs:[], progress:0, aiScore:null, aiTier:null,
+        aiRationale:"", aiReflection:"", startTime:null, duration:null
+      };
+    });
+    renderAllCards();
+
+    for (const tc of TEST_CASES) {
+      await runTestCase(tc);
+      updateSummary();
+    }
+
+    btn.disabled = false;
+    btn.textContent = "▶ Run All 7 Tests";
+    updateSummary();
+  }
+
+  async function runSingleTest() {
+    const tcId = document.getElementById("singleSelect").value;
+    if (!tcId) { alert("Please select a test case."); return; }
+    const tc = TEST_CASES.find(t => t.id === tcId);
+    runState[tcId] = {
+      status:"pending", answers:{}, pillarScores:{}, globalIndex:0,
+      logs:[], progress:0, aiScore:null, aiTier:null,
+      aiRationale:"", aiReflection:"", startTime:null, duration:null
+    };
+    updateCard(tcId);
+    await runTestCase(tc);
+    updateSummary();
+  }
+
+  // ============================================================
+  // SUMMARY BAR
+  // ============================================================
+  function updateSummary() {
+    const bar        = document.getElementById("summary-bar");
+    const done       = TEST_CASES.filter(tc => runState[tc.id].status === "done");
+    const validated  = done.filter(tc => runState[tc.id].overallStatus === "validated").length;
+    const acceptable = done.filter(tc => runState[tc.id].overallStatus === "acceptable").length;
+    const needsReview= done.filter(tc => runState[tc.id].overallStatus === "needs_review").length;
+    const avgScore   = done.length > 0
+      ? Math.round(done.reduce((s,tc) => s + runState[tc.id].globalIndex, 0) / done.length) : 0;
+
+    bar.style.display = "grid";
+    bar.innerHTML = `
+      <div class="summary-card">
+        <div class="label">Completed</div>
+        <div class="value" style="color:var(--accent-light)">${done.length}/${TEST_CASES.length}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Validated</div>
+        <div class="value" style="color:var(--green)">${validated}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Acceptable</div>
+        <div class="value" style="color:var(--yellow)">${acceptable}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Needs Review</div>
+        <div class="value" style="color:${needsReview>0?"var(--red)":"var(--green)"}">${needsReview}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Avg Engine Score</div>
+        <div class="value" style="color:var(--yellow)">${avgScore}%</div>
+      </div>
+    `;
+
+    // Enable holistic report as soon as any case is done
+    if (done.length > 0) {
+      document.getElementById("holisticBtn").disabled = false;
+    }
+  }
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+  function getTierLocal(score) {
+    if (score >= 85) return "Iron Fortress";
+    if (score >= 70) return "Resilient";
+    if (score >= 55) return "Developing";
+    if (score >= 40) return "Vulnerable";
+    return "Critical Risk";
+  }
+
+  function getTierColor(tier) {
+    return {
+      "Iron Fortress": "#00c853",
+      "Resilient":     "#64dd17",
+      "Developing":    "#ffd600",
+      "Vulnerable":    "#ff6d00",
+      "Critical Risk": "#ef4444"
+    }[tier] || "#8b8ba0";
+  }
+
+  function getBarColor(score) {
+    if (score >= 70) return "#22c55e";
+    if (score >= 55) return "#eab308";
+    if (score >= 40) return "#f97316";
+    return "#ef4444";
+  }
+
+  function formatAIText(text) {
+    let clean = text.trim();
+    if (clean.startsWith("[") && clean.endsWith("]")) {
+      try {
+        const arr = JSON.parse(clean);
+        if (Array.isArray(arr)) clean = arr.join(" ");
+      } catch(e) { /* leave as is */ }
+    }
+    return clean
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/^#{1,3} (.+)/gm, "<h3>$1</h3>")
+      .replace(/^\d+\.\s+\*\*(.+?)\*\*/gm, "<h3>$1</h3>")
+      .replace(/^\d+\.\s+([A-Z][A-Z ]+)$/gm, "<h3>$1</h3>")
+      .replace(/^\d+\.\s+(.+)/gm, "<strong>$1</strong>")
+      .replace(/^[-•]\s+(.+)/gm, "<li>$1</li>")
+      .replace(/\n\n/g, "<br/><br/>")
+      .replace(/\n/g, "<br/>");
+  }
+
+  function formatDuration(seconds) {
+    if (seconds < 60) return `${seconds}s`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function toggleAnswers(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("open");
+  }
+
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

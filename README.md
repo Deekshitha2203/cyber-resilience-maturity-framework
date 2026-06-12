@@ -104,29 +104,17 @@ to simulate realistic assessor responses across 7 real-world organisational prof
 - Extreme cases (TC02, TC05) showed tightest alignment — 2–8% delta
 - Larger complex organisations showed expected AI drift due to stateless batch constraints
 
-**Key Finding:**
-The scoring engine produces more consistent results than AI subjective assessment at scale,
-particularly for large complex organisations. This validates the need for a structured 
-weighted scoring engine over purely expert judgment.
-
 ---
 
 ## Project Structure
 
 CyberResilienceTool/
-
 ├── index.html              — Landing page
-
 ├── ai_test_runner.html     — AI validation test runner
-
 ├── css/
-
 │   └── style.css           — Full styling
-
 └── js/
-
 ├── questions.js        — Complete question bank, scoring engine, applicability logic
-
 └── app.js              — Assessment flow, results, AI recommendations
 
 ---

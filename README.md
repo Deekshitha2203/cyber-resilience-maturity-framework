@@ -5,9 +5,7 @@ capstone project in collaboration with CrowdStrike.
 
 ## What This Is
 
-Most existing cyber resilience frameworks — NIST SP 800-160, MITRE CREF, C2M2 — are 
-designed for security experts. They are not readable by Boards, not actionable for CISOs, 
-and not specific enough for technical teams. This tool bridges that gap.
+Most existing cyber resilience frameworks are built for security practitioners first. Translating their findings into something a Board can act on, a CISO can prioritize, and a technical team can implement simultaneously remains an unsolved problem. This tool addresses that gap.
 
 CRMF is a dynamic maturity assessment that evaluates an organisation's cyber resilience 
 across five pillars, produces a scored Global Resilience Index, and generates 

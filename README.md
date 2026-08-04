@@ -6,9 +6,16 @@ A dynamic web-based cyber resilience assessment tool built as a Duke MEng Cybers
 
 ## What This Is
 
-Most cyber resilience frameworks — NIST SP 800-160, MITRE CREF, C2M2 — are comprehensive but produce outputs that require security expertise to interpret. A board member cannot extract investment decisions from a technical controls assessment. A security engineer cannot act on board-level language.
+Most cyber resilience frameworks — NIST SP 800-160, MITRE CREF, C2M2 — are 
+comprehensive but produce outputs that require security expertise to interpret. 
+A board member cannot extract investment decisions from a technical controls 
+assessment. A security engineer cannot act on board-level language.
 
-CRMF solves this by taking one assessment and automatically generating three completely different outputs — for the Board, the CISO, and the Technical team — each in the right language, each grounded in the actual failure modes identified. It also addresses the checklist compliance problem by penalising controls that exist on paper but have never been tested.
+CRMF solves this by taking one assessment and automatically generating three 
+completely different outputs — for the Board, the CISO, and the Technical team 
+— each in the right language, each grounded in the actual failure modes 
+identified. It also addresses the checklist compliance problem by penalising 
+controls that exist on paper but have never been tested.
 
 ---
 
@@ -170,15 +177,13 @@ The framework correctly differentiates across all org types, sizes, and sectors.
 
 ### Methodology Limitations
 
-**Stateless batch architecture:** Each batch of 15 questions is an independent API call with no shared conversation history. Even with a cumulative running summary passed between batches, the AI cannot maintain perfect calibration across 22+ independent calls for large complex organisations. This produces calibration drift analogous to assessor fatigue in real-world evaluations — the AI may establish a strong baseline early but lose consistency in later batches.
+**Stateless batch architecture:** Each batch of 15 questions is an independent API call with no shared conversation history. Even with a cumulative running summary passed between batches, the AI cannot maintain perfect calibration across 22+ independent calls for large complex organisations. This produces calibration drift analogous to assessor fatigue in real-world evaluations. The AI may establish a strong baseline early but lose consistency in later batches.
 
 **Token constraints:** Duke OIT's 20,000 TPM limit makes it impossible to answer all questions in a single API call for large organisations with 300+ applicable questions. This is the root cause of the stateless batch architecture and its associated drift.
 
 **Static question bank:** The AI assessor is evaluated against a fixed set of questions. Emerging threats and novel attack patterns not covered by the current question bank are not assessed.
 
 **AI subjectivity:** Despite structured prompts and a running summary, the AI brings inherent subjectivity to its answers. Two runs of the same test case may produce different answer distributions and therefore different scores — unlike the deterministic scoring engine which always produces identical outputs for identical inputs.
-
-**These limitations are themselves a finding:** The deterministic scoring engine outperforms the AI assessor in consistency and reproducibility, particularly for large complex organisations. This validates the core premise of the framework — that a structured weighted scoring engine is more reliable than purely subjective expert assessment at scale.
 
 ---
 
